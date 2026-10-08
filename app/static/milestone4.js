@@ -184,59 +184,164 @@ function m4HideError() {
    Quality Metrics
    ----------------------------------------- */
 
+function m4FindValue(obj, keys) {
+    if (obj === null || obj === undefined) {
+        return null;
+    }
+
+    if (typeof obj !== "object") {
+        return null;
+    }
+
+    for (const key of keys) {
+        if (
+            Object.prototype.hasOwnProperty.call(obj, key) &&
+            obj[key] !== null &&
+            obj[key] !== undefined &&
+            obj[key] !== ""
+        ) {
+            return obj[key];
+        }
+    }
+
+    for (const value of Object.values(obj)) {
+        if (value && typeof value === "object") {
+            const found = m4FindValue(value, keys);
+
+            if (
+                found !== null &&
+                found !== undefined &&
+                found !== ""
+            ) {
+                return found;
+            }
+        }
+    }
+
+    return null;
+}
+
+
 function renderM4Quality(data) {
 
-    /*
-     * Backend may return metrics directly or
-     * inside a "data" object.
-     */
+    console.log("[Milestone 4] Full quality response:", data);
 
-    const metrics =
-        data?.data ||
-        data?.metrics ||
-        data ||
-        {};
+    const fixRate = m4FindValue(data, [
+        "fix_rate_percentage",
+        "fix_rate_percent",
+        "bug_fix_rate",
+        "fix_rate",
+        "fixRate",
+        "bugFixRate"
+    ]);
 
-    const fixRate = m4First(
-        metrics,
-        [
-            "bug_fix_rate",
-            "fix_rate",
-            "fixRate",
-            "bugFixRate"
-        ]
-    );
+    const mttr = m4FindValue(data, [
+        "mean_time_to_resolution_hours",
+        "mttr_hours",
+        "average_mttr",
+        "avg_mttr",
+        "mttr",
+        "average_fix_time"
+    ]);
 
-    const mttr = m4First(
-        metrics,
-        [
-            "average_mttr",
-            "avg_mttr",
-            "mttr",
-            "average_fix_time"
-        ]
-    );
+    const backlog = m4FindValue(data, [
+        "backlog_health_score",
+        "backlog_health",
+        "backlogHealthScore"
+    ]);
 
-    const backlog = m4First(
-        metrics,
-        [
-            "backlog_health_score",
-            "backlog_health",
-            "backlogHealthScore"
-        ]
-    );
+    const leakage = m4FindValue(data, [
+        "defect_leakage_percentage",
+        "defect_leakage_percent",
+        "defect_leakage_rate",
+        "defect_leakage",
+        "leakage_rate",
+        "leakageRate"
+    ]);
 
-    const leakage = m4First(
-        metrics,
-        [
-            "defect_leakage_rate",
-            "defect_leakage",
-            "leakage_rate",
-            "leakageRate"
-        ]
-    );
+    console.log("[Milestone 4] KPI values:", {
+        fixRate,
+        mttr,
+        backlog,
+        leakage
+    });
 
+    const fixRateElement = document.getElementById("m4FixRate");
 
+    if (fixRateElement) {
+        if (
+            fixRate !== null &&
+            fixRate !== undefined &&
+            fixRate !== ""
+        ) {
+            const value = Number(fixRate);
+
+            fixRateElement.textContent =
+                Number.isFinite(value)
+                    ? `${value.toFixed(1)}%`
+                    : `${fixRate}%`;
+        } else {
+            fixRateElement.textContent = "—";
+        }
+    }
+
+    const mttrElement = document.getElementById("m4Mttr");
+
+    if (mttrElement) {
+        if (
+            mttr !== null &&
+            mttr !== undefined &&
+            mttr !== ""
+        ) {
+            const value = Number(mttr);
+
+            mttrElement.textContent =
+                Number.isFinite(value)
+                    ? `${value.toFixed(1)}h`
+                    : `${mttr}h`;
+        } else {
+            mttrElement.textContent = "—";
+        }
+    }
+
+    const backlogElement = document.getElementById("m4Backlog");
+
+    if (backlogElement) {
+        if (
+            backlog !== null &&
+            backlog !== undefined &&
+            backlog !== ""
+        ) {
+            const value = Number(backlog);
+
+            backlogElement.textContent =
+                Number.isFinite(value)
+                    ? value.toFixed(1)
+                    : backlog;
+        } else {
+            backlogElement.textContent = "—";
+        }
+    }
+
+    const leakageElement = document.getElementById("m4Leakage");
+
+    if (leakageElement) {
+        if (
+            leakage !== null &&
+            leakage !== undefined &&
+            leakage !== ""
+        ) {
+            const value = Number(leakage);
+
+            leakageElement.textContent =
+                Number.isFinite(value)
+                    ? `${value.toFixed(1)}%`
+                    : `${leakage}%`;
+        } else {
+            leakageElement.textContent = "—";
+        }
+    }
+}
     const fixElement =
         document.getElementById("m4FixRate");
 
@@ -255,10 +360,12 @@ function renderM4Quality(data) {
             m4FormatPercent(fixRate);
     }
 
+
     if (mttrElement) {
         mttrElement.textContent =
             m4FormatHours(mttr);
     }
+
 
     if (backlogElement) {
 
@@ -267,25 +374,30 @@ function renderM4Quality(data) {
             backlog === undefined
         ) {
             backlogElement.textContent = "--";
+
         } else {
 
             const number = Number(backlog);
 
             if (Number.isNaN(number)) {
+
                 backlogElement.textContent =
                     String(backlog);
+
             } else {
+
                 backlogElement.textContent =
                     number.toFixed(1);
             }
         }
     }
 
+
     if (leakageElement) {
         leakageElement.textContent =
             m4FormatPercent(leakage);
     }
-}
+
 
 
 /* -----------------------------------------
@@ -353,6 +465,7 @@ function renderM4Workload(data) {
             "Unknown"
         );
 
+
         const team = m4First(
             developer,
             [
@@ -361,6 +474,7 @@ function renderM4Workload(data) {
             ],
             "—"
         );
+
 
         const active = Number(
             m4First(
@@ -375,6 +489,7 @@ function renderM4Workload(data) {
             )
         );
 
+
         const completed = Number(
             m4First(
                 developer,
@@ -388,6 +503,7 @@ function renderM4Workload(data) {
             )
         );
 
+
         const mttr = m4First(
             developer,
             [
@@ -396,6 +512,7 @@ function renderM4Workload(data) {
                 "mttr"
             ]
         );
+
 
         return {
             name,
@@ -411,6 +528,7 @@ function renderM4Workload(data) {
     const activeTasks =
         rows.map(row => row.active);
 
+
     const averageActive =
         activeTasks.length
             ? activeTasks.reduce(
@@ -425,6 +543,7 @@ function renderM4Workload(data) {
         let balanceClass = "empty";
         let balanceText = "NO LOAD";
 
+
         if (row.active > 0) {
 
             const ratio =
@@ -432,10 +551,14 @@ function renderM4Workload(data) {
                     ? row.active / averageActive
                     : 0;
 
+
             if (ratio <= 1.5) {
+
                 balanceClass = "good";
                 balanceText = "BALANCED";
+
             } else {
+
                 balanceClass = "review";
                 balanceText = "REVIEW";
             }
@@ -446,7 +569,9 @@ function renderM4Workload(data) {
             <tr>
 
                 <td>
-                    <strong>${escapeM4Html(row.name)}</strong>
+                    <strong>
+                        ${escapeM4Html(row.name)}
+                    </strong>
                 </td>
 
                 <td>
@@ -519,9 +644,21 @@ async function loadMilestone4() {
         ]);
 
 
+        console.log(
+            "[Milestone 4] Quality response:",
+            qualityResponse
+        );
+
+        console.log(
+            "[Milestone 4] Workload response:",
+            workloadResponse
+        );
+
+
         renderM4Quality(
             qualityResponse
         );
+
 
         renderM4Workload(
             workloadResponse
@@ -555,9 +692,11 @@ function showMilestone4() {
     const milestone =
         document.getElementById("milestone4Content");
 
+
     if (dashboard) {
         dashboard.classList.add("hidden");
     }
+
 
     if (milestone) {
         milestone.classList.remove("hidden");
@@ -581,6 +720,7 @@ function showMilestone4() {
             "Milestone 4";
     }
 
+
     if (subtitle) {
         subtitle.textContent =
             "Optimization & Finalization";
@@ -592,7 +732,7 @@ function showMilestone4() {
      */
 
     document
-        .querySelectorAll(".nav-link")
+        .querySelectorAll(".nav-link, .nav-item")
         .forEach(button => {
             button.classList.remove("active");
         });
@@ -600,6 +740,7 @@ function showMilestone4() {
 
     const nav =
         document.getElementById("milestone4Nav");
+
 
     if (nav) {
         nav.classList.add("active");
@@ -611,7 +752,7 @@ function showMilestone4() {
 
 
 /* -----------------------------------------
-   Return to Dashboard
+   Return to Dashboard / Issues Board
    ----------------------------------------- */
 
 const originalShowDashboard =
@@ -623,9 +764,58 @@ window.showDashboard = function () {
     const milestone =
         document.getElementById("milestone4Content");
 
+
     if (milestone) {
         milestone.classList.add("hidden");
     }
+
+
+    const dashboard =
+        document.getElementById("dashboardContent");
+
+
+    if (dashboard) {
+        dashboard.classList.remove("hidden");
+    }
+
+
+    document
+        .querySelectorAll(".nav-link, .nav-item")
+        .forEach(button => {
+            button.classList.remove("active");
+        });
+
+
+    const issuesBoardNav =
+        document.querySelector(
+            'a[href="/IssuesBoard"]'
+        );
+
+
+    if (issuesBoardNav) {
+        issuesBoardNav.classList.add("active");
+    }
+
+
+    if (typeof originalShowDashboard === "function") {
+        originalShowDashboard();
+    }
+};
+
+
+/* -----------------------------------------
+   Issues Board
+   ----------------------------------------- */
+
+function showIssuesBoard() {
+
+    const milestone =
+        document.getElementById("milestone4Content");
+
+    if (milestone) {
+        milestone.classList.add("hidden");
+    }
+
 
     const dashboard =
         document.getElementById("dashboardContent");
@@ -634,10 +824,28 @@ window.showDashboard = function () {
         dashboard.classList.remove("hidden");
     }
 
-    if (typeof originalShowDashboard === "function") {
-        originalShowDashboard();
+
+    document
+        .querySelectorAll(".nav-link, .nav-item")
+        .forEach(button => {
+            button.classList.remove("active");
+        });
+
+
+    const issuesBoardNav =
+        document.querySelector(
+            'a[href="/IssuesBoard"]'
+        );
+
+
+    if (issuesBoardNav) {
+        issuesBoardNav.classList.add("active");
     }
-};
+}
+
+
+window.showIssuesBoard =
+    showIssuesBoard;
 
 
 /* -----------------------------------------
